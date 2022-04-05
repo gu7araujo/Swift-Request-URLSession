@@ -1,8 +1,29 @@
 import UIKit
 
+struct Brewery: Decodable {
+    let id, name, breweryType: String
+    let street: String?
+    let city, state, postalCode, country: String
+    let longitude, latitude, phone: String?
+    let websiteURL: String?
+    let updatedAt, createdAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, name
+        case breweryType = "brewery_type"
+        case street, city, state
+        case postalCode = "postal_code"
+        case country, longitude, latitude, phone
+        case websiteURL = "website_url"
+        case updatedAt = "updated_at"
+        case createdAt = "created_at"
+    }
+}
+
 enum ServiceError: Error {
     case invalidURL
     case network(Error?)
+    case decodeFail(Error?)
 }
 
 class Service {
@@ -18,8 +39,12 @@ class Service {
                 return callback(.failure(.network(error)))
             }
 
-            let json = try? JSONSerialization.jsonObject(with: data, options: .allowFragments)
-            callback(.success(json))
+            do {
+                let json = try JSONDecoder().decode([Brewery].self, from: data)
+                callback(.success(json))
+            } catch {
+                callback(.failure(.decodeFail(error)))
+            }
         }.resume()
     }
 }
